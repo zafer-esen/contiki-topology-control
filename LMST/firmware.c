@@ -73,14 +73,14 @@
 //for 15m tx range.
 static const
 float POWER [8] = {
-    {2.107}  ,
-    {11.472} ,
-    {28.330} ,
-    {52.680} ,
-    {84.520} ,
-    {123.850},
-    {170.680},
-    {225.000}
+  2.107  ,
+  11.472 ,
+  28.330 ,
+  52.680 ,
+  84.520 ,
+  123.850,
+  170.680,
+  225.000
 };
 /* This structure holds information about 1-hop neighbors. */
 struct neighbor {
@@ -93,29 +93,29 @@ struct neighbor {
   uint16_t node_j;
   /*weight: distance*/
   float weight;
- };
+};
  
 /*for conversions from float to char[4] and vise versa*/
 union ff{
-	float f;
-	unsigned char b4[sizeof(float)];
+  float f;
+  unsigned char b4[sizeof(float)];
 };
 
 /*this structure holds information about 2-hop neighbors.*/
 
 struct twohopneighs {
-		struct twohopneighs *next;
-		uint16_t id;
-		uint16_t * nn;
-		float * w;
-		uint8_t len;
+  struct twohopneighs *next;
+  uint16_t id;
+  uint16_t * nn;
+  float * w;
+  uint8_t len;
 };
 
 //EDGES for MST calculation
 struct edge {
-	struct edge *next;
-	uint8_t i_ind;
-	uint8_t * j_ind;
+  struct edge *next;
+  uint8_t i_ind;
+  uint8_t * j_ind;
 };
 
 
@@ -172,18 +172,18 @@ remove_neighbor(void *n)
 //----------------------------------------------------------------------
 float str2float(char * str)
 {
-	float r, num;
-	char * s = strdup(str);
-	char * a =(char *) strtok(s, "."), b[3];
-	num = atoi(a);
-	r = num;
-	a = (char *) strtok(NULL, ".");
-	b[0] = a[0];
-	b[1] = a[1];
-	b[2] = a[2];
-	num = atoi(b);
-	r += (r<0 ? - (num / 1000) : (num / 1000));
-	return r;
+  float r, num;
+  char * s = strdup(str);
+  char * a =(char *) strtok(s, "."), b[3];
+  num = atoi(a);
+  r = num;
+  a = (char *) strtok(NULL, ".");
+  b[0] = a[0];
+  b[1] = a[1];
+  b[2] = a[2];
+  num = atoi(b);
+  r += (r<0 ? - (num / 1000) : (num / 1000));
+  return r;
 }
 
 
@@ -193,109 +193,105 @@ static void
 broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
 {
   
-  unsigned char * tmp1;
-  char * * x, * y;
+  char * tmp1;
+  char *x=0, *y=0;
   float dx, dy;
-  struct neighbor *e;
-  struct twohopneighs *ee;
+  struct neighbor *e=0;
+  struct twohopneighs *ee=0;
   uint16_t ii,kk, ll, vall;
   uint8_t * tttmp;
-  union ff f1;
+  //union ff f1;
   
   
   //int16_t rssi = (int16_t)(packetbuf_attr(PACKETBUF_ATTR_RSSI) - 45);
   
   
-  tmp1 = (unsigned char *)packetbuf_dataptr();
+  tmp1 = (char *)packetbuf_dataptr();
  
   if(tmp1[0] == 'N'){ //final - neighbourhood rediscovery
     printf("NEIGHBOR %d\n", from->u8[0]);
-	free(x); 
-	free(y);
-	free(e);
-	free(tmp1);
-	free(ee); 
-	return;
+    free(x); 
+    free(y);
+    free(e);
+    free(tmp1);
+    free(ee); 
+    return;
   }
  
  
   if (tmp1[0] == '$') //1-hop neighbour discovery (initial step)
-  {
-  tmp1 = strdup(&tmp1[1]);
+    {
+      tmp1 = strdup((char *)&tmp1[1]);
 
-
-  x = strtok(tmp1, "#");
-  y = strtok(NULL, "#");
+      x = strtok(tmp1, "#");
+      y = strtok((char *)NULL, "#");
  
-  dx = str2float(x);
-  dy = str2float(y);
-  if (list_length(neighbor_list) >= MAX_NEIGHBORS){
-	 free(x);
-	 free(y);
-	 free(e);
-	 free(ee);
-	 free(tmp1);
-     return;
-	  
-	  }
-	  
-
-		  
-  for(e = list_head(neighbor_list); e != NULL; e = list_item_next(e)) {
-    if(from->u8[0] ==  e->node_j) {
-	/* free(x);
-	 free(y);
-	 free(e);
-	 free(ee);
-	 free(tmp1);*/
-     return;
-    }
-  }
- 
-  if (from->u8[0] == rimeaddr_node_addr.u8[0]){
-	  return;
-	  }
-//place in 1-hop neighbours list	
-  e = memb_alloc(&neighbor_memb);
-  if(e != NULL) {
-	e->node_i = rimeaddr_node_addr.u8[0];
-    e->node_j = from->u8[0];
-    //set weight
-    e->weight =  (float)((myy - dy) * (myy - dy) + (myx - dx) * (myx - dx));
-	list_add(neighbor_list, e);
-    }
-  
-	free(x); 
+      dx = str2float(x);
+      dy = str2float(y);
+      if (list_length(neighbor_list) >= MAX_NEIGHBORS){
+	free(x);
 	free(y);
 	free(e);
-	free(tmp1);
 	free(ee);
+	free(tmp1);
+	return;	  
+      }
+	  	  
+      for(e = list_head(neighbor_list); e != NULL; e = list_item_next(e)) {
+	if(from->u8[0] ==  e->node_j) {
+	  /* free(x);
+	     free(y);
+	     free(e);
+	     free(ee);
+	     free(tmp1);*/
+	  return;
+	}
+      }
+ 
+      if (from->u8[0] == rimeaddr_node_addr.u8[0]){
 	return;
+      }
+      //place in 1-hop neighbours list	
+      e = memb_alloc(&neighbor_memb);
+      if(e != NULL) {
+	e->node_i = rimeaddr_node_addr.u8[0];
+	e->node_j = from->u8[0];
+	//set weight
+	e->weight =  (float)((myy - dy) * (myy - dy) + (myx - dx) * (myx - dx));
+	list_add(neighbor_list, e);
+      }
+  
+      free(x); 
+      free(y);
+      free(e);
+      free(tmp1);
+      free(ee);
+      return;
 
 
-  }
+    }
   
   //if you have reached at this point, then you are in the 2nd hop neighbourhood discovery.
   if (list_length(twohopneighs_list) >= MAX_NEIGHBORS){
-	 free(x);
-	 free(y);
-	 free(e);
-	 free(ee);
-	 free(tmp1);
-     return;
+    free(x);
+    free(y);
+    free(e);
+    free(ee);
+    free(tmp1);
+    return;
 	  
   }
   //2-hop neighbor
   for (ee = list_head(twohopneighs_list); ee !=NULL; ee = list_item_next(ee)) {
-	  if (from->u8[0] == ee -> id) {
-		//shouldnt be in here...
-		free(x); 
-		free(y);
-		free(e);
-		free(tmp1);
-		free(ee); 
-		return; 
-		 }
+    if (from->u8[0] == ee -> id) {
+      //shouldnt be in here...
+      free(x); 
+      free(y);
+      free(e);
+      free(tmp1);
+      free(ee); 
+      return; 
+    }
 	  
 	  
   }
@@ -304,33 +300,33 @@ broadcast_recv(struct broadcast_conn *c, const rimeaddr_t *from)
   ee = memb_alloc(&twohopneighs_memb);
   
   if (ee !=NULL){
-	tttmp = (uint8_t *)packetbuf_dataptr();
+    tttmp = (uint8_t *)packetbuf_dataptr();
 	
-	ll = packetbuf_datalen() / 3; //3 BYTES per neighbour
-	  ee->id = from->u8[0];
-	   ee->len = ll;
+    ll = packetbuf_datalen() / 3; //3 BYTES per neighbour
+    ee->id = from->u8[0];
+    ee->len = ll;
 	  
-	  ee->nn = malloc(sizeof(uint16_t)*ll);
-	  ee->w = malloc(sizeof(float)*ll);
-	  for (ii=0;ii<ll;ii++){
-		  ee->nn[ii] =0;
-		  ee->w[ii] = 0.0;
-		  }
+    ee->nn = malloc(sizeof(uint16_t)*ll);
+    ee->w = malloc(sizeof(float)*ll);
+    for (ii=0;ii<ll;ii++){
+      ee->nn[ii] =0;
+      ee->w[ii] = 0.0;
+    }
 	  
-	  ii = 0;
-	   for (kk= 0; kk< ll*3;kk=kk+3)
-	  {
-		ee->nn[ii] = tttmp[kk];
-		vall = tttmp[kk+1]<<8 | tttmp[kk+2];
+    ii = 0;
+    for (kk= 0; kk< ll*3;kk=kk+3)
+      {
+	ee->nn[ii] = tttmp[kk];
+	vall = tttmp[kk+1]<<8 | tttmp[kk+2];
 
 
-		ee->w[ii] = (float)(vall * 1000.0 / 200000.00); //you are receing in uint16 - convert back to float
-		ii++;  
-	  }
-	  list_add(twohopneighs_list, ee);
+	ee->w[ii] = (float)(vall * 1000.0 / 200000.00); //you are receing in uint16 - convert back to float
+	ii++;  
+      }
+    list_add(twohopneighs_list, ee);
   }
   
- free(x); 
+  free(x); 
   free(y);
   free(e);
   free(tmp1);
@@ -359,21 +355,21 @@ PROCESS_THREAD(b_process, ev, data)
   static uint16_t i, k,val;
   
   
-	static uint8_t *msg1;  
+  static uint8_t *msg1;  
  
-    PROCESS_EXITHANDLER(broadcast_close(&broadcast));
-	PROCESS_BEGIN();
+  PROCESS_EXITHANDLER(broadcast_close(&broadcast));
+  PROCESS_BEGIN();
 
 
-   /* Initialize the memory for the neighbor table entries. */
-	memb_init(&neighbor_memb);
+  /* Initialize the memory for the neighbor table entries. */
+  memb_init(&neighbor_memb);
 
   /* Initialize the list used for the neighbor table. */
   list_init(neighbor_list);
   
   
   /* Initialize the memory for the neighbor table entries. */
-	memb_init(&twohopneighs_memb);
+  memb_init(&twohopneighs_memb);
 
   /* Initialize the list used for the neighbor table. */
   list_init(twohopneighs_list);
@@ -381,40 +377,40 @@ PROCESS_THREAD(b_process, ev, data)
   
 
     
-	broadcast_open(&broadcast, 129, &broadcast_call);
+  broadcast_open(&broadcast, 129, &broadcast_call);
   
   /*Wait for the position from Cooja script*/
   
-	PROCESS_YIELD_UNTIL(ev == serial_line_event_message);
-	msg = strdup((char*) data);
+  PROCESS_YIELD_UNTIL(ev == serial_line_event_message);
+  msg = strdup((char*) data);
   
-	position = strdup((char*) data);
-	my_x = strtok(msg, "#");
-	my_y = strtok(NULL, "#");
+  position = strdup((char*) data);
+  my_x = strtok(msg, "#");
+  my_y = strtok(NULL, "#");
  
-	if((position = malloc(strlen("$")+strlen((char *)data)+1)) != NULL){
-		position[0] = '\0';   // ensures the memory is an empty string
-		strcat(position,"$");
-		strcat(position,(char *)data);
-	}
+  if((position = malloc(strlen("$")+strlen((char *)data)+1)) != NULL){
+    position[0] = '\0';   // ensures the memory is an empty string
+    strcat(position,"$");
+    strcat(position,(char *)data);
+  }
 
   
-	myx = str2float(my_x);
-	myy = str2float(my_y);
+  myx = str2float(my_x);
+  myy = str2float(my_y);
 
   /*Set timers redelca timer to 60s and broadcast timer (1st hop neighbour discovery)*/
-	etimer_set(&redelca_timer,60*CLOCK_SECOND);
-	etimer_set(&send_timer,((10  + rimeaddr_node_addr.u8[0] % TIMEFRAME) * CLOCK_SECOND));
-	PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
+  etimer_set(&redelca_timer,60*CLOCK_SECOND);
+  etimer_set(&send_timer,((10  + rimeaddr_node_addr.u8[0] % TIMEFRAME) * CLOCK_SECOND));
+  PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
   /*Prepare broadcast buffer and broadcast your position*/
  
-	packetbuf_clear();
-	packetbuf_clear_hdr();
-	packetbuf_copyfrom(position, strlen(position));
-	broadcast_send(&broadcast);
+  packetbuf_clear();
+  packetbuf_clear_hdr();
+  packetbuf_copyfrom(position, strlen(position));
+  broadcast_send(&broadcast);
 	
-	free(my_x);
-	free(my_y);
+  free(my_x);
+  free(my_y);
  
  
   PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&redelca_timer));
@@ -431,21 +427,21 @@ PROCESS_THREAD(b_process, ev, data)
   start_energy_cpu = energest_type_time(ENERGEST_TYPE_CPU);
    
   
-   if (list_length(neighbor_list) > 0) {
+  if (list_length(neighbor_list) > 0) {
 
 
-	i=0;
+    i=0;
 
-	msg1 = malloc(sizeof(uint8_t)*3*MAX_NEIGHBORS);
-	//format is: node id (1B) , weight (2B)
+    msg1 = malloc(sizeof(uint8_t)*3*MAX_NEIGHBORS);
+    //format is: node id (1B) , weight (2B)
     
     for(new = list_head(neighbor_list); new != NULL; new = list_item_next(new))
-    {
-		msg1[i++] =  new->node_j & 0xFF;
-		val = (uint16_t)floor(new->weight * PRES_CONST / PRES_RANGE);
-		msg1[i++] = val>>8;//msb
-		msg1[i++] = val & 0xFF;//lsb
-    }
+      {
+	msg1[i++] =  new->node_j & 0xFF;
+	val = (uint16_t)floor(new->weight * PRES_CONST / PRES_RANGE);
+	msg1[i++] = val>>8;//msb
+	msg1[i++] = val & 0xFF;//lsb
+      }
 
     k = rimeaddr_node_addr.u8[0] % TIMEFRAME;
     k = k *3;
@@ -454,40 +450,40 @@ PROCESS_THREAD(b_process, ev, data)
     etimer_set(&send_timer, (k+10) * CLOCK_SECOND); //a delay for handling concurrent transmissions.
     PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
     
-   	packetbuf_clear();
-	packetbuf_clear_hdr();
+    packetbuf_clear();
+    packetbuf_clear_hdr();
 	
     packetbuf_copyfrom(msg1, sizeof(uint8_t)*i);
     broadcast_send(&broadcast);
    
         
-   PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&redelca_timer));
+    PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&redelca_timer));
   
- }
- free(new);
- free(msg1);
+  }
+  free(new);
+  free(msg1);
  
- end_energy_rx = energest_type_time(ENERGEST_TYPE_LISTEN);
- end_energy_tx = energest_type_time(ENERGEST_TYPE_TRANSMIT); //timings for 2-hop neighbour discovery
+  end_energy_rx = energest_type_time(ENERGEST_TYPE_LISTEN);
+  end_energy_tx = energest_type_time(ENERGEST_TYPE_TRANSMIT); //timings for 2-hop neighbour discovery
  
- printf("ENERGY_TX %lu\n", end_energy_tx-start_energy_tx);
- printf("ENERGY_RX %lu\n", end_energy_rx-start_energy_rx);
- //<<-------------------------------------------------end
+  printf("ENERGY_TX %lu\n", end_energy_tx-start_energy_tx);
+  printf("ENERGY_RX %lu\n", end_energy_rx-start_energy_rx);
+  //<<-------------------------------------------------end
 
- etimer_set(&send_timer, SEND_TIME);
+  etimer_set(&send_timer, SEND_TIME);
  
- PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
+  PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&send_timer));
  
- /**---------Switch control to LMST thread---------------------------**/ 
- process_post(&lmst_process, lmst_start_event,NULL);
+  /**---------Switch control to LMST thread---------------------------**/ 
+  process_post(&lmst_process, lmst_start_event,NULL);
  
- PROCESS_YIELD_UNTIL(ev == lmst_finish_event);
+  PROCESS_YIELD_UNTIL(ev == lmst_finish_event);
  
   
   end_energy_cpu = energest_type_time(ENERGEST_TYPE_CPU);
   
   
- /**--------final 1-hop neigh (after setting the transmission power)**//
+  /**--------final 1-hop neigh (after setting the transmission power)**/
   
   start_energy_rx = energest_type_time(ENERGEST_TYPE_LISTEN);
   start_energy_tx = energest_type_time(ENERGEST_TYPE_TRANSMIT);
@@ -503,7 +499,7 @@ PROCESS_THREAD(b_process, ev, data)
   packetbuf_attr_clear();
   packetbuf_copyfrom(position, strlen(position));
   broadcast_send(&broadcast);
- // 
+  // 
   PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&redelca_timer));
   end_energy_rx = energest_type_time(ENERGEST_TYPE_LISTEN);
   end_energy_tx = energest_type_time(ENERGEST_TYPE_TRANSMIT);
@@ -521,186 +517,181 @@ PROCESS_THREAD(b_process, ev, data)
 PROCESS_THREAD(lmst_process, ev,data)
 {
 
-	static uint16_t ii,jj,kk,ll,maxn;
+  static uint16_t ii,jj,kk,ll,maxn;
 
-	static struct neighbor *tmpn;
+  static struct neighbor *tmpn;
 
-	static struct twohopneighs *tmpnn;
+  static struct twohopneighs *tmpnn;
 
-    static struct edge *tmpe;
+  static struct edge *tmpe;
 
-    static float a, maxp, b;
+  static float a, maxp, b;
     
-	static int mem;
+  static int mem;
 
-	static uint8_t found;
+  static uint8_t found;
 	
 
-	PROCESS_BEGIN();
+  PROCESS_BEGIN();
     
-    memb_init(&edge_memb);
+  memb_init(&edge_memb);
     
-    list_init(edge_list);
+  list_init(edge_list);
     
-	PROCESS_YIELD_UNTIL(ev == lmst_start_event);
+  PROCESS_YIELD_UNTIL(ev == lmst_start_event);
 
-   printf("DELAUNAY\n");
+  printf("DELAUNAY\n");
    
-   numofv = list_length(neighbor_list);
-   maxn = list_length(twohopneighs_list);
+  numofv = list_length(neighbor_list);
+  maxn = list_length(twohopneighs_list);
  
  
   printf("NEIGHBOR %d\n",numofv);
   
   if (numofv > MAX_NEIGHBORS || maxn > MAX_NEIGHBORS){
 	  
-	  printf("INITIALIZE %d", -255); //error handling
-	  goto myexit;
-	  }
+    printf("INITIALIZE %d", -255); //error handling
+    goto myexit;
+  }
   
  
  
- 	   //check if in 2-hop neighborhood there are unknown 1st hop neighs
-	   tmpnn = list_head(twohopneighs_list);
-	   while (tmpnn !=NULL){
+  //check if in 2-hop neighborhood there are unknown 1st hop neighs
+  tmpnn = list_head(twohopneighs_list);
+  while (tmpnn !=NULL){
 	
-		   found = 0;
-		   for (tmpn = list_head(neighbor_list); tmpn !=NULL; tmpn = list_item_next(tmpn)){
+    found = 0;
+    for (tmpn = list_head(neighbor_list); tmpn !=NULL; tmpn = list_item_next(tmpn)){
 
-				if (tmpnn->id == tmpn->node_j)
-				{
-					found=1;
-				}
-		   }
+      if (tmpnn->id == tmpn->node_j)
+	{
+	  found=1;
+	}
+    }
 	
-		   if (found ==0){
+    if (found ==0){
 			
-				if (remove_2hopneighbor(tmpnn)<0){
-					printf("INITIALIZE %d\n",-5); //error handling
-					goto myexit;
-					}
-				tmpnn = list_item_next(tmpnn);
-			}
-		   else {
-			   	tmpnn = list_item_next(tmpnn);
-		   }
-	   }
-	   numofv = list_length(neighbor_list);
-	   maxn = list_length(twohopneighs_list);
+      if (remove_2hopneighbor(tmpnn)<0){
+	printf("INITIALIZE %d\n",-5); //error handling
+	goto myexit;
+      }
+      tmpnn = list_item_next(tmpnn);
+    }
+    else {
+      tmpnn = list_item_next(tmpnn);
+    }
+  }
+  numofv = list_length(neighbor_list);
+  maxn = list_length(twohopneighs_list);
 	      
   
-	  tmpn = list_head(neighbor_list);
-	   while (tmpn !=NULL){
-		   found = 0;
-		   for (tmpnn = list_head(twohopneighs_list); tmpnn !=NULL; tmpnn = list_item_next(tmpnn)){
-				if (tmpnn->id == tmpn->node_j)
-				{
-					found=1;
-				}
-		   }
-		   if (found ==0){
-			   if (remove_neighbor(tmpn) <0){
-					printf("INITIALIZE %d\n",-6); //error handling
-					goto myexit;
-					}
-					tmpn = list_item_next(tmpn);
-			}
+  tmpn = list_head(neighbor_list);
+  while (tmpn !=NULL){
+    found = 0;
+    for (tmpnn = list_head(twohopneighs_list); tmpnn !=NULL; tmpnn = list_item_next(tmpnn)){
+      if (tmpnn->id == tmpn->node_j)
+	{
+	  found=1;
+	}
+    }
+    if (found ==0){
+      if (remove_neighbor(tmpn) <0){
+	printf("INITIALIZE %d\n",-6); //error handling
+	goto myexit;
+      }
+      tmpn = list_item_next(tmpn);
+    }
 		   
-		   else {
-			   	tmpn = list_item_next(tmpn);
-			   }
-	   }
-	   numofv = list_length(neighbor_list);
-	   maxn = list_length(twohopneighs_list);
+    else {
+      tmpn = list_item_next(tmpn);
+    }
+  }
+  numofv = list_length(neighbor_list);
+  maxn = list_length(twohopneighs_list);
 	   
-//	}
-//done with 1- and 2-hop checks.
+  //	}
+  //done with 1- and 2-hop checks.
 
-   if (numofv != maxn) {
-		printf("INITIALIZE %d\n", -1); //error handling
-	   goto myexit;
-	   }
+  if (numofv != maxn) {
+    printf("INITIALIZE %d\n", -1); //error handling
+    goto myexit;
+  }
 
-//let's try to create the edges for 1- and 2-hop neighbours graph.
+  //let's try to create the edges for 1- and 2-hop neighbours graph.
 
-  	tmpe = memb_alloc(&edge_memb);
+  tmpe = memb_alloc(&edge_memb);
 
-  	if (tmpe !=NULL){
-		tmpe->i_ind = 0;
-		tmpe->j_ind = malloc(sizeof(uint8_t)*(numofv+1));
-		if (tmpe->j_ind == NULL){
-			printf("INITIALIZE %d\n", -254); //error handling
-			goto myexit;
-			}
-		tmpe->j_ind[0] = 0; //0x0 element
-		ii=1;
-		for (tmpnn = list_head(twohopneighs_list); tmpnn!=NULL && ii<numofv+1; tmpnn = list_item_next(tmpnn)){
+  if (tmpe !=NULL){
+    tmpe->i_ind = 0;
+    tmpe->j_ind = malloc(sizeof(uint8_t)*(numofv+1));
+    if (tmpe->j_ind == NULL){
+      printf("INITIALIZE %d\n", -254); //error handling
+      goto myexit;
+    }
+    tmpe->j_ind[0] = 0; //0x0 element
+    ii=1;
+    for (tmpnn = list_head(twohopneighs_list); tmpnn!=NULL && ii<numofv+1; tmpnn = list_item_next(tmpnn)){
 
-			tmpe->j_ind[ii] = 1;
-			ii++;
-		}
+      tmpe->j_ind[ii] = 1;
+      ii++;
+    }
 
-		list_add(edge_list, tmpe);
+    list_add(edge_list, tmpe);
+  }
+
+  else {
+    printf("INITIALIZE %d\n", -2);//error handling
+    goto myexit;
+  }
+  ii=1;
+  for(tmpn = list_head(neighbor_list); tmpn != NULL && ii<numofv+1; tmpn = list_item_next(tmpn))
+    {
+      tmpe = memb_alloc(&edge_memb);
+      if ( tmpe!= NULL) {
+	tmpe->i_ind = ii;
+	tmpe->j_ind = malloc(sizeof(uint8_t)*(numofv+1));
+	if (tmpe->i_ind == 0){
+	  printf("INITIALIZE %d", -2);//error handling
+	  goto myexit;
+	}
+	for (jj=0;jj<numofv+1;jj++){
+	  tmpe->j_ind[jj] = 0;
 	}
 
-	else {
-	   printf("INITIALIZE %d\n", -2);//error handling
-	   goto myexit;
-		}
-    ii=1;
-	for(tmpn = list_head(neighbor_list); tmpn != NULL && ii<numofv+1; tmpn = list_item_next(tmpn))
-	{
-		tmpe = memb_alloc(&edge_memb);
-		if ( tmpe!= NULL) {
-
-
-		tmpe->i_ind = ii;
-		tmpe->j_ind = malloc(sizeof(uint8_t)*(numofv+1));
-       if (tmpe->i_ind == NULL){
-			printf("INITIALIZE %d", -2);//error handling
-			goto myexit;
-		   
-		}
-		for (jj=0;jj<numofv+1;jj++){
-			tmpe->j_ind[jj] = 0;
-
-
-		}
-
-		tmpe->j_ind[0] = 1; // this is the current node index
-		kk=1;
-       for (tmpnn = list_head(twohopneighs_list); tmpnn != NULL && kk<numofv+1; tmpnn = list_item_next(tmpnn)){
-		    found = 2;
+	tmpe->j_ind[0] = 1; // this is the current node index
+	kk=1;
+	for (tmpnn = list_head(twohopneighs_list); tmpnn != NULL && kk<numofv+1; tmpnn = list_item_next(tmpnn)){
+	  found = 2;
 		    
-			if (tmpn->node_j != tmpnn -> id){
-			 if (tmpnn->len > MAX_NEIGHBORS){
-				 printf("INITIALIZE %d\n", -3);//error handling
-				 goto myexit;
-				 }	
-			 for (jj=0;jj<tmpnn->len;jj++){
-				 if (tmpnn->nn[jj] == tmpn->node_j) { //if your 1-st hop neighbour is also my 1-st hop neighbour.
-	       		   found = 0;
-					break;
-				 }
+	  if (tmpn->node_j != tmpnn -> id){
+	    if (tmpnn->len > MAX_NEIGHBORS){
+	      printf("INITIALIZE %d\n", -3);//error handling
+	      goto myexit;
+	    }	
+	    for (jj=0;jj<tmpnn->len;jj++){
+	      if (tmpnn->nn[jj] == tmpn->node_j) { //if your 1-st hop neighbour is also my 1-st hop neighbour.
+		found = 0;
+		break;
+	      }
 				 
-			 }
-			 tmpe->j_ind[kk] = found ==0? 1:tmpe->j_ind[kk];
-		  }
-		  kk++;
-		}
-      list_add(edge_list, tmpe); //in list we add the 2-hop edges between 1-st hop neighs of the current node.
+	    }
+	    tmpe->j_ind[kk] = found ==0? 1:tmpe->j_ind[kk];
+	  }
+	  kk++;
+	}
+	list_add(edge_list, tmpe); //in list we add the 2-hop edges between 1-st hop neighs of the current node.
       
       }
       
       else{
-		  	printf("INITIALIZE %d\n", -4);//error handling
+	printf("INITIALIZE %d\n", -4);//error handling
 		  
-	   goto myexit;	
+	goto myexit;	
 	
 		  
-		  }
+      }
       ii++;
-     } 
+    } 
      
 
   ll = 0;
@@ -711,10 +702,10 @@ PROCESS_THREAD(lmst_process, ev,data)
 
   
   if (numofv<1 || numofv>MAX_NEIGHBORS+1)
-  {
+    {
 	
-	  goto myexit;
-  } 
+      goto myexit;
+    } 
   //calculate the MST based on Prim's algorithm. 
   process_post(&prim_process, prim_start_event, NULL);
   
@@ -723,78 +714,78 @@ PROCESS_THREAD(lmst_process, ev,data)
   //and then get the lmst edges of the current node and get 
   maxp = 0.0;
   
- if (numofv > 1){
-	 ii=1;
-  for (tmpn = list_head(neighbor_list); tmpn !=NULL && ii<numofv+1; tmpn=list_item_next(tmpn))
-  {
+  if (numofv > 1){
+    ii=1;
+    for (tmpn = list_head(neighbor_list); tmpn !=NULL && ii<numofv+1; tmpn=list_item_next(tmpn))
+      {
 	
 	if (parent[ii] == rimeaddr_node_addr.u8[0]) {
-		a = POWER[7] - tmpn->weight;
-		kk = 7;
-		for (jj=0;jj<7;jj++){
-			b = POWER[jj] - tmpn->weight;
-			kk = (b>0 && a>b)?jj:kk;
-			a = (b>0 && a>b)?b:a;
-		}
-		ll = 3+4*kk > ll?3+4*kk:ll;
-		maxp = a>maxp?a:maxp;
-		maxn++;
+	  a = POWER[7] - tmpn->weight;
+	  kk = 7;
+	  for (jj=0;jj<7;jj++){
+	    b = POWER[jj] - tmpn->weight;
+	    kk = (b>0 && a>b)?jj:kk;
+	    a = (b>0 && a>b)?b:a;
+	  }
+	  ll = 3+4*kk > ll?3+4*kk:ll;
+	  maxp = a>maxp?a:maxp;
+	  maxn++;
 	}
 	ii++;  
+      }
   }
- }
- else {
-	 if (list_length(neighbor_list) == 1){
-		 maxn++;
-		 tmpn = list_head(neighbor_list);
+  else {
+    if (list_length(neighbor_list) == 1){
+      maxn++;
+      tmpn = list_head(neighbor_list);
 		 
-		 a = POWER[7] - tmpn->weight;
-		 kk = 7;
+      a = POWER[7] - tmpn->weight;
+      kk = 7;
 	 
-		for (ii=0;ii<7;ii++) {
-			b = POWER[ii] - tmpn->weight;
-			kk = (b>0 && a>b) ? ii:kk;
-			a = (b>0 && a>b) ? b:a;
-		}
+      for (ii=0;ii<7;ii++) {
+	b = POWER[ii] - tmpn->weight;
+	kk = (b>0 && a>b) ? ii:kk;
+	a = (b>0 && a>b) ? b:a;
+      }
 
-		ll = 3+4*kk > ll ? 3+4*kk: ll;
-		maxp = a > maxp? a:maxp;
-	}
-	else {
-		ll = 31;
-	 }
- }
-
-   myexit:
-
-   printf("REDELCA %d\n", maxn);
-
-
- if (ll < 3){
-	 ll = 31;
- }
-
-
- cc2420_set_txpower(ll);
- //calc the memory peak..
-   mem = list_length(neighbor_list)*sizeof(struct neighbor) + list_length(twohopneighs_list)*sizeof(struct twohopneighs) + list_length(edge_list)*(sizeof(struct edge)) + (numofv+1)*sizeof(uint8_t);
-   
-   for (tmpnn = list_head(twohopneighs_list); tmpnn != NULL; tmpnn = list_item_next(tmpnn)){
-  	mem = mem + tmpnn->len*(sizeof(float) +sizeof(uint16_t));
+      ll = 3+4*kk > ll ? 3+4*kk: ll;
+      maxp = a > maxp? a:maxp;
+    }
+    else {
+      ll = 31;
+    }
   }
- printf("POWER %d\n", ll);
- printf("MEMORY %d\n", mem);
+
+ myexit:
+
+  printf("REDELCA %d\n", maxn);
+
+
+  if (ll < 3){
+    ll = 31;
+  }
+
+
+  cc2420_set_txpower(ll);
+  //calc the memory peak..
+  mem = list_length(neighbor_list)*sizeof(struct neighbor) + list_length(twohopneighs_list)*sizeof(struct twohopneighs) + list_length(edge_list)*(sizeof(struct edge)) + (numofv+1)*sizeof(uint8_t);
+   
+  for (tmpnn = list_head(twohopneighs_list); tmpnn != NULL; tmpnn = list_item_next(tmpnn)){
+    mem = mem + tmpnn->len*(sizeof(float) +sizeof(uint16_t));
+  }
+  printf("POWER %d\n", ll);
+  printf("MEMORY %d\n", mem);
   
 
 
- process_post(&b_process, lmst_finish_event, NULL);
+  process_post(&b_process, lmst_finish_event, NULL);
  
- free(tmpe);
- free(tmpn);
- free(tmpnn);
+  free(tmpe);
+  free(tmpn);
+  free(tmpnn);
 
 
- PROCESS_END();
+  PROCESS_END();
 
 }
 
@@ -802,39 +793,39 @@ PROCESS_THREAD(lmst_process, ev,data)
 PROCESS_THREAD(prim_process, ev,data)
 {
 
- static uint8_t iv, ie, ik, ss, aa, tmpnode, currentnode, current_ind;
+  static uint8_t iv, ie, ik, ss, aa, tmpnode, currentnode, current_ind;
  
- static float mincost, tmpval;
- static uint8_t totalvisited;
+  static float mincost, tmpval;
+  static uint8_t totalvisited;
  
- static struct neighbor * tmpneigh;
- static struct twohopneighs * tmptwoneigh; 
- static struct edge *tte;
+  static struct neighbor * tmpneigh;
+  static struct twohopneighs * tmptwoneigh; 
+  static struct edge *tte;
 
 
- static uint8_t visited[MAX_NEIGHBORS+1], errorcode;
- static uint8_t s[MAX_NEIGHBORS+1];
- static uint16_t lw[MAX_NEIGHBORS+1];
+  static uint8_t visited[MAX_NEIGHBORS+1], errorcode;
+  static uint8_t s[MAX_NEIGHBORS+1];
+  static uint16_t lw[MAX_NEIGHBORS+1];
 
- PROCESS_BEGIN();
- for (iv=0;iv<MAX_NEIGHBORS+1;iv++){
-	 visited[iv] = 0;
-	 parent[iv] = rimeaddr_node_addr.u8[0] & 0xff;
-	 s[iv] = 0;
-	 lw[iv] = 0;
-	 }
+  PROCESS_BEGIN();
+  for (iv=0;iv<MAX_NEIGHBORS+1;iv++){
+    visited[iv] = 0;
+    parent[iv] = rimeaddr_node_addr.u8[0] & 0xff;
+    s[iv] = 0;
+    lw[iv] = 0;
+  }
 
 	
- PROCESS_YIELD_UNTIL(ev == prim_start_event);
+  PROCESS_YIELD_UNTIL(ev == prim_start_event);
 
 
   
- iv=1;   
- for (tmpneigh = list_head(neighbor_list); tmpneigh!=NULL && iv<numofv+1; tmpneigh= list_item_next(tmpneigh)){
+  iv=1;   
+  for (tmpneigh = list_head(neighbor_list); tmpneigh!=NULL && iv<numofv+1; tmpneigh= list_item_next(tmpneigh)){
 
-	lw[iv++] = (uint16_t)floor(tmpneigh->weight * PRES_CONST / PRES_RANGE);
+    lw[iv++] = (uint16_t)floor(tmpneigh->weight * PRES_CONST / PRES_RANGE);
 
- }
+  }
   
 
   visited[0] = 1;
@@ -849,92 +840,92 @@ PROCESS_THREAD(prim_process, ev,data)
   errorcode = 0;
 
   do {
-	mincost = MAXVAL;
-	tmpnode = currentnode;
-	ss = 0;
-	iv=1;
+    mincost = MAXVAL;
+    tmpnode = currentnode;
+    ss = 0;
+    iv=1;
 
-	for (tmpneigh = list_head(neighbor_list); tmpneigh !=NULL && iv<numofv+1; tmpneigh = list_item_next(tmpneigh)){
+    for (tmpneigh = list_head(neighbor_list); tmpneigh !=NULL && iv<numofv+1; tmpneigh = list_item_next(tmpneigh)){
 
-		tmpval = (float)(lw[iv] * 1000.0 / 200000.00);
+      tmpval = (float)(lw[iv] * 1000.0 / 200000.00);
 	   
-		if (visited[iv] == 0) {
+      if (visited[iv] == 0) {
 
 	
-			if (tmpval <= mincost) {
-				if (s[iv]>=ss){
-					mincost = tmpval;//:mincost;
-					tmpnode = tmpneigh->node_j;//:tmpnode;
-				}
-				ss = s[iv];
-			}
-		}
-		iv++;
-
+	if (tmpval <= mincost) {
+	  if (s[iv]>=ss){
+	    mincost = tmpval;//:mincost;
+	    tmpnode = tmpneigh->node_j;//:tmpnode;
+	  }
+	  ss = s[iv];
 	}
-	iv=1;
+      }
+      iv++;
+
+    }
+    iv=1;
 	
-	for (tmpneigh = list_head(neighbor_list); tmpneigh!=NULL; tmpneigh = list_item_next(tmpneigh))	{
-		if (tmpneigh->node_j == tmpnode) {
-			if (visited[iv] ==1) {
-				//you shouldn't be in here!
-				errorcode = 1;
-				break;
-				}
-			else {
-			visited[iv] = 1;
-			current_ind = iv;
-			currentnode = tmpnode;
-			totalvisited++;
-			//printf("NEIGHBOR: now passing from %d", tmpnode);
-			break;
-		}
-		}
-
-		iv++;
+    for (tmpneigh = list_head(neighbor_list); tmpneigh!=NULL; tmpneigh = list_item_next(tmpneigh))	{
+      if (tmpneigh->node_j == tmpnode) {
+	if (visited[iv] ==1) {
+	  //you shouldn't be in here!
+	  errorcode = 1;
+	  break;
 	}
+	else {
+	  visited[iv] = 1;
+	  current_ind = iv;
+	  currentnode = tmpnode;
+	  totalvisited++;
+	  //printf("NEIGHBOR: now passing from %d", tmpnode);
+	  break;
+	}
+      }
+
+      iv++;
+    }
 
    
-	if (errorcode == 1 || iv == numofv+1){
-			printf("NEIGHBOR: ERROR\n");
-		break;
-	}
-  //  printf("NEIGHBOR: currentnode %d:\n", currentnode);
+    if (errorcode == 1 || iv == numofv+1){
+      printf("NEIGHBOR: ERROR\n");
+      break;
+    }
+    //  printf("NEIGHBOR: currentnode %d:\n", currentnode);
   
-   //update the graph's weights, based on the PRIM algorithm
-	tte = list_head(edge_list);
-	tte = list_item_next(tte);
+    //update the graph's weights, based on the PRIM algorithm
+    tte = list_head(edge_list);
+    tte = list_item_next(tte);
 
-	for (ik=1;ik<numofv+1; ik++){
+    for (ik=1;ik<numofv+1; ik++){
 	
-	    if (current_ind == ik) {
-			ie=1;
-			for (tmptwoneigh = list_head(twohopneighs_list); tmptwoneigh !=NULL && ie<numofv+1; tmptwoneigh = list_item_next(tmptwoneigh)){
-				if (tte->j_ind[ie] == 1){
-				 for (aa = 0; aa<tmptwoneigh->len; aa++){
-					if (tmptwoneigh->nn[aa] == currentnode){
-						iv=1;
-						for (tmpneigh =  list_head(neighbor_list); tmpneigh !=NULL && iv<numofv+1; tmpneigh = list_item_next(tmpneigh)){
-							if 	(tmpneigh->node_j == tmptwoneigh->id && visited[iv] == 0){
-								tmpval = (float)(lw[iv] * 1000.0 / 200000.00);
-								if (tmpval>tmptwoneigh->w[aa]){
-									lw[iv] = (uint16_t)floor(tmptwoneigh->w[aa] * PRES_CONST / PRES_RANGE);
-									parent[iv] = currentnode;
-								}
-								s[iv]++;
-							}
-							iv++;
-						}
-					}
-				}
-
-			}
-			ie++;
+      if (current_ind == ik) {
+	ie=1;
+	for (tmptwoneigh = list_head(twohopneighs_list); tmptwoneigh !=NULL && ie<numofv+1; tmptwoneigh = list_item_next(tmptwoneigh)){
+	  if (tte->j_ind[ie] == 1){
+	    for (aa = 0; aa<tmptwoneigh->len; aa++){
+	      if (tmptwoneigh->nn[aa] == currentnode){
+		iv=1;
+		for (tmpneigh =  list_head(neighbor_list); tmpneigh !=NULL && iv<numofv+1; tmpneigh = list_item_next(tmpneigh)){
+		  if 	(tmpneigh->node_j == tmptwoneigh->id && visited[iv] == 0){
+		    tmpval = (float)(lw[iv] * 1000.0 / 200000.00);
+		    if (tmpval>tmptwoneigh->w[aa]){
+		      lw[iv] = (uint16_t)floor(tmptwoneigh->w[aa] * PRES_CONST / PRES_RANGE);
+		      parent[iv] = currentnode;
+		    }
+		    s[iv]++;
+		  }
+		  iv++;
 		}
-		break;
+	      }
+	    }
+
+	  }
+	  ie++;
 	}
-	tte = list_item_next(tte);
-	}
+	break;
+      }
+      tte = list_item_next(tte);
+    }
   } while (totalvisited<=numofv);
   
   free(tmpneigh);
@@ -944,7 +935,7 @@ PROCESS_THREAD(prim_process, ev,data)
   process_post(&lmst_process, prim_finish_event, NULL);
    
 	
-	PROCESS_END();
+  PROCESS_END();
 	
 }
 
